@@ -2,7 +2,7 @@ import type { Configuration, RuleSetRule } from "webpack";
 import { createBaseConfig } from "@docusaurus/core/lib/webpack/base";
 import { applyConfigureWebpack } from "@docusaurus/core/lib/webpack/utils";
 import { getAllClientModules } from "@docusaurus/core/lib/server/clientModules";
-import { loadContext } from "@docusaurus/core/lib/server/site.js";
+import { loadSite } from "@docusaurus/core/lib/server/site.js";
 import type { LoadedPlugin, Props } from "@docusaurus/types";
 import { logger } from "@storybook/node-logger";
 import { type StorybookConfig, type FrameworkOptions } from "./types";
@@ -15,17 +15,17 @@ export {
   webpack,
 } from "@storybook/react-webpack5/preset";
 
+
 let docusaurusData: Props;
 
 const loadDocusaurus = async () => {
   docusaurusData =
     docusaurusData ||
-    (await loadContext({
+    (await loadSite({
       siteDir: process.cwd(),
     }));
 
-    console.log("docusaurusData is", docusaurusData);
-  return docusaurusData;
+  return docusaurusData.props;
 };
 
 const ruleMatches = (rule: RuleSetRule, ...inputs: string[]) =>
@@ -34,10 +34,7 @@ const ruleMatches = (rule: RuleSetRule, ...inputs: string[]) =>
 const filterPlugins = (
   plugins: LoadedPlugin[],
   ignoredPlugins: string[]
-): LoadedPlugin[] => {
-  console.log('Filtering plugins:', plugins);
-  return plugins.filter((p) => !ignoredPlugins.includes(p.name))
-  };
+): LoadedPlugin[] => plugins.filter((p) => !ignoredPlugins.includes(p.name));
 
 const hasPlugin = (plugins: LoadedPlugin[], name: string) =>
   plugins.map((plugin) => plugin.name).includes(name);
@@ -59,8 +56,7 @@ const previewAnnotations: NonNullable<StorybookConfig["previewAnnotations"]> =
       StorybookConfig["framework"]
     >("framework");
 
-    const data = await loadDocusaurus();
-    const props = data.siteConfig;
+    const props = await loadDocusaurus();
     const plugins = filterPlugins(
       props.plugins,
       getFrameworkOption(frameworkConfig, "ignoreClientModules", [])
@@ -91,8 +87,7 @@ const webpackFinal: NonNullable<StorybookConfig["webpackFinal"]> = async (
     StorybookConfig["framework"]
   >("framework");
 
-  const data = await loadDocusaurus();
-  const props = data.siteConfig;
+  const props = await loadDocusaurus();
   const plugins = filterPlugins(
     props.plugins,
     getFrameworkOption(frameworkConfig, "ignoreWebpackConfigs", [])

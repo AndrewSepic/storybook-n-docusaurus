@@ -1,8 +1,8 @@
 import type { Configuration, RuleSetRule } from "webpack";
-import createClientConfig from "@docusaurus/core/lib/webpack/client";
+import { createBaseConfig } from "@docusaurus/core/lib/webpack/base";
 import { applyConfigureWebpack } from "@docusaurus/core/lib/webpack/utils";
-import { loadClientModules } from "@docusaurus/core/lib/server/clientModules";
-import { load } from "@docusaurus/core/lib/server";
+import { getAllClientModules } from "@docusaurus/core/lib/server/clientModules";
+import { loadSite } from "@docusaurus/core/lib/server/site.js";
 import type { LoadedPlugin, Props } from "@docusaurus/types";
 import { logger } from "@storybook/node-logger";
 import { type StorybookConfig, type FrameworkOptions } from "./types";
@@ -15,16 +15,17 @@ export {
   webpack,
 } from "@storybook/react-webpack5/preset";
 
+
 let docusaurusData: Props;
 
 const loadDocusaurus = async () => {
   docusaurusData =
     docusaurusData ||
-    (await load({
+    (await loadSite({
       siteDir: process.cwd(),
     }));
 
-  return docusaurusData;
+  return docusaurusData.props;
 };
 
 const ruleMatches = (rule: RuleSetRule, ...inputs: string[]) =>
@@ -72,7 +73,7 @@ const previewAnnotations: NonNullable<StorybookConfig["previewAnnotations"]> =
       );
     }
 
-    const clientModules = loadClientModules(clientModulePlugins);
+    const clientModules = getAllClientModules(clientModulePlugins);
     const preview = require.resolve(join(__dirname, "preview"));
 
     return [...entry, ...clientModules, preview];
@@ -94,7 +95,7 @@ const webpackFinal: NonNullable<StorybookConfig["webpackFinal"]> = async (
 
   // Load up the Docusaurus client Webpack config,
   // so we can extract its aliases and rules
-  const docusaurusConfig = await createClientConfig(props);
+  const docusaurusConfig = await createBaseConfig({props, minify:false, isServer:false});
 
   const webpackAlias = {
     ...baseConfig.resolve!.alias,

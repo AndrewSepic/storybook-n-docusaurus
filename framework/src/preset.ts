@@ -1,5 +1,5 @@
 import type { Configuration, RuleSetRule } from "webpack";
-import createClientConfig from "@docusaurus/core/lib/webpack/client";
+import { createBaseConfig } from "@docusaurus/core/lib/webpack/base";
 import { applyConfigureWebpack } from "@docusaurus/core/lib/webpack/utils";
 import { getAllClientModules } from "@docusaurus/core/lib/server/clientModules";
 import { loadContext } from "@docusaurus/core/lib/server/site.js";
@@ -24,6 +24,7 @@ const loadDocusaurus = async () => {
       siteDir: process.cwd(),
     }));
 
+    console.log("docusaurusData is", docusaurusData);
   return docusaurusData;
 };
 
@@ -33,7 +34,10 @@ const ruleMatches = (rule: RuleSetRule, ...inputs: string[]) =>
 const filterPlugins = (
   plugins: LoadedPlugin[],
   ignoredPlugins: string[]
-): LoadedPlugin[] => plugins.filter((p) => !ignoredPlugins.includes(p.name));
+): LoadedPlugin[] => {
+  console.log('Filtering plugins:', plugins);
+  return plugins.filter((p) => !ignoredPlugins.includes(p.name))
+  };
 
 const hasPlugin = (plugins: LoadedPlugin[], name: string) =>
   plugins.map((plugin) => plugin.name).includes(name);
@@ -55,7 +59,8 @@ const previewAnnotations: NonNullable<StorybookConfig["previewAnnotations"]> =
       StorybookConfig["framework"]
     >("framework");
 
-    const props = await loadDocusaurus();
+    const data = await loadDocusaurus();
+    const props = data.siteConfig;
     const plugins = filterPlugins(
       props.plugins,
       getFrameworkOption(frameworkConfig, "ignoreClientModules", [])
@@ -86,7 +91,8 @@ const webpackFinal: NonNullable<StorybookConfig["webpackFinal"]> = async (
     StorybookConfig["framework"]
   >("framework");
 
-  const props = await loadDocusaurus();
+  const data = await loadDocusaurus();
+  const props = data.siteConfig;
   const plugins = filterPlugins(
     props.plugins,
     getFrameworkOption(frameworkConfig, "ignoreWebpackConfigs", [])
@@ -94,7 +100,7 @@ const webpackFinal: NonNullable<StorybookConfig["webpackFinal"]> = async (
 
   // Load up the Docusaurus client Webpack config,
   // so we can extract its aliases and rules
-  const docusaurusConfig = await createClientConfig(props);
+  const docusaurusConfig = await createBaseConfig({props, minify:false, isServer:false});
 
   const webpackAlias = {
     ...baseConfig.resolve!.alias,

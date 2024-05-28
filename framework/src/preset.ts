@@ -1,8 +1,8 @@
 import type { Configuration, RuleSetRule } from "webpack";
 import createClientConfig from "@docusaurus/core/lib/webpack/client";
 import { applyConfigureWebpack } from "@docusaurus/core/lib/webpack/utils";
-import { loadClientModules } from "@docusaurus/core/lib/server/clientModules";
-import { load } from "@docusaurus/core/lib/server";
+import { getAllClientModules } from "@docusaurus/core/lib/server/clientModules";
+import { loadContext } from "@docusaurus/core/lib/server/site.js";
 import type { LoadedPlugin, Props } from "@docusaurus/types";
 import { logger } from "@storybook/node-logger";
 import { type StorybookConfig, type FrameworkOptions } from "./types";
@@ -20,7 +20,7 @@ let docusaurusData: Props;
 const loadDocusaurus = async () => {
   docusaurusData =
     docusaurusData ||
-    (await load({
+    (await loadContext({
       siteDir: process.cwd(),
     }));
 
@@ -72,7 +72,7 @@ const previewAnnotations: NonNullable<StorybookConfig["previewAnnotations"]> =
       );
     }
 
-    const clientModules = loadClientModules(clientModulePlugins);
+    const clientModules = getAllClientModules(clientModulePlugins);
     const preview = require.resolve(join(__dirname, "preview"));
 
     return [...entry, ...clientModules, preview];
